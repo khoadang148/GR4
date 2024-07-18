@@ -1,18 +1,18 @@
-// src/actions/auth.actions.js
-import axios from 'axios';
-import Cookies from 'js-cookie';
+// src/redux/actions/auth.action.js
+import axios from "axios";
+import Cookies from "js-cookie";
+
 import {
+  LOGIN_FAILURE,
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
-  LOGIN_FAILURE,
   LOGOUT,
   SET_TOKEN,
-  SET_ROLE,
-  SET_USER,
   SET_ID,
   SIGNUP_REQUEST,
   SIGNUP_SUCCESS,
   SIGNUP_FAILURE,
+  SET_ROLE, SET_USER,
   FORGOT_PASSWORD_REQUEST,
   FORGOT_PASSWORD_SUCCESS,
   FORGOT_PASSWORD_FAILURE,
@@ -22,9 +22,11 @@ import {
   UPDATE_USER_ROLE_REQUEST,
   UPDATE_USER_ROLE_SUCCESS,
   UPDATE_USER_ROLE_FAILURE
-} from '../actionType';
 
-const API_URL = 'https://667e5671297972455f67ee82.mockapi.io/projectojt/api/v1/users';
+} from "../actionType";
+
+const API_URL = "https://667e5671297972455f67ee82.mockapi.io/projectojt/api/v1/users";
+
 
 export const login = (email, password) => async (dispatch) => {
   dispatch({ type: LOGIN_REQUEST });
@@ -58,28 +60,45 @@ export const login = (email, password) => async (dispatch) => {
 };
 
 export const logout = () => {
-  Cookies.remove('token');
-  Cookies.remove('role');
-  Cookies.remove('avatar');
-  Cookies.remove('username');
+  Cookies.remove("token");
+  Cookies.remove("role");
+  Cookies.remove("avatar");
+  Cookies.remove("username");
+  Cookies.remove("email");
   localStorage.removeItem('firstName');
   localStorage.removeItem('lastName');
   localStorage.removeItem('headline');
   localStorage.removeItem('description');
-  localStorage.removeItem('mysite');
-  localStorage.removeItem('facebookprofile');
+  localStorage.removeItem('mysite ');
+  localStorage.removeItem('facebookbprofile');
   localStorage.removeItem('twitterprofile');
   localStorage.removeItem('linkedinprofile');
   localStorage.removeItem('youtubeprofile');
 
-  return { type: LOGOUT };
+  return {
+    type: LOGOUT,
+  };
 };
 
-export const setToken = (token) => ({ type: SET_TOKEN, payload: token });
+export const setToken = (token) => ({
+  type: "SET_TOKEN",
+  payload: token,
+});
 
-export const setRole = (role) => ({ type: SET_ROLE, payload: role });
+export const setRole = (role) => {
+  return {
+    type: "SET_ROLE",
+    payload: role,
+  };
+};
 
-export const setID = (id) => ({ type: SET_ID, payload: id });
+export const setID = (id) => {
+  // Thêm action lưu user
+  return {
+    type: SET_ID,
+    payload: id,
+  };
+};
 
 // Action creators
 export const signupRequest = () => ({
@@ -117,6 +136,26 @@ export const signup = (fullname, email, password, role = 'student') => async (di
   }
 };
 
+export const register = (userData) => async (dispatch) => {
+  dispatch({ type: LOGIN_REQUEST });
+  try {
+    const response = await axios.post('https://your-api-endpoint.com/register', userData);
+    const { token, role, user, id, avatar } = response.data;
+
+    Cookies.set('token', token);
+    Cookies.set('role', role);
+    Cookies.set('id', id);
+    Cookies.set('avatar', avatar);
+
+    dispatch({ type: LOGIN_SUCCESS, payload: user });
+    dispatch({ type: SET_TOKEN, payload: token });
+    dispatch({ type: SET_ROLE, payload: role });
+    dispatch({ type: SET_ID, payload: id });
+    dispatch({ type: SET_USER, payload: user });
+  } catch (error) {
+    dispatch({ type: LOGIN_FAILURE, error: error.message });
+  }
+};
 export const forgotPassword = (email) => async (dispatch) => {
   dispatch({ type: FORGOT_PASSWORD_REQUEST });
   try {

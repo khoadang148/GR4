@@ -9,15 +9,16 @@ const signLogoUrl = 'https://gambolthemes.net/html-items/cursus-new-demo/images/
 
 const SignupStep = () => {
   const [isInstructor, setIsInstructor] = useState(true);
-  const [isLoading, setLoading] = useState(false); // State for loading indicator
-  const [bio, setBio] = useState(''); // State for bio description
+  const [isLoading, setLoading] = useState(false);
+  const [bio, setBio] = useState('');
+  const [signupSuccess, setSignupSuccess] = useState(false); // State for signup success notification
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { users } = useSelector((state) => state.auth); // Select users from Redux state
+  const { users } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (!users || users.length === 0) {
-      dispatch(fetchUsers()); // Dispatch fetchUsers action when component mounts
+      dispatch(fetchUsers());
     }
   }, [dispatch, users]);
 
@@ -26,20 +27,17 @@ const SignupStep = () => {
   };
 
   const handleSignup = async () => {
-    setLoading(true); // Start loading indicator
+    setLoading(true);
 
     try {
-      // Dispatch action to update user role
-      const maxId = getMaxId(users); // Assuming you have a function to get max ID from users
+      const maxId = getMaxId(users);
       const role = isInstructor ? 'teacher' : 'student';
       await dispatch(updateUserRole(maxId, role));
-
-      setLoading(false); // Stop loading indicator
-      // Handle success action (e.g., redirect or show success message)
+      setSignupSuccess(true); // Set signup success state
+      setLoading(false);
     } catch (error) {
-      setLoading(false); // Stop loading indicator on error
+      setLoading(false);
       console.error('Failed to update user role:', error);
-      // Handle error here
     }
   };
 
@@ -48,7 +46,6 @@ const SignupStep = () => {
     return Math.max(...ids);
   };
 
-  // Function to handle textarea change
   const handleBioChange = (e) => {
     setBio(e.target.value);
   };
@@ -77,6 +74,10 @@ const SignupStep = () => {
               {isLoading && !isInstructor ? 'Signing Up...' : 'Student Sign Up Now'}
             </button>
           </div>
+
+          {signupSuccess && (
+            <p className="text-green-500 text-center my-2">Account created successfully!</p>
+          )}
 
           {isInstructor ? (
             <div>
@@ -112,9 +113,9 @@ const SignupStep = () => {
               <button
                 onClick={handleSignup}
                 className={`w-full bg-red-500 text-white py-2 rounded ${bio.length < 10 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={bio.length < 10 || isLoading}
+                disabled={bio.length < 10 || isLoading || signupSuccess}
               >
-                {isLoading ? 'Signing Up...' : 'Instructor Sign Up Now'}
+                {isLoading ? 'Signing Up...' : (signupSuccess ? 'Signed Up!' : 'Instructor Sign Up Now')}
               </button>
             </div>
           ) : (
@@ -134,9 +135,9 @@ const SignupStep = () => {
               <button
                 onClick={handleSignup}
                 className={`w-full bg-red-500 text-white py-2 rounded ${bio.length < 10 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={bio.length < 10 || isLoading}
+                disabled={bio.length < 10 || isLoading || signupSuccess}
               >
-                {isLoading ? 'Signing Up...' : 'Student Sign Up Now'}
+                {isLoading ? 'Signing Up...' : (signupSuccess ? 'Signed Up!' : 'Student Sign Up Now')}
               </button>
             </div>
           )}

@@ -22,7 +22,7 @@ const LivestreamDetail = ({ sidebar }) => {
   const { messages } = useSelector((state) => state.chat);
   const [inputMessage, setInputMessage] = useState("");
   const [username, setUsername] = useState("");
-  const { sendMessage } = useWebSocket();
+  const { sendMessage, socket } = useWebSocket();
   const webcamRef = useRef(null);
 
   useEffect(() => {
@@ -33,17 +33,38 @@ const LivestreamDetail = ({ sidebar }) => {
     const name = Cookies.get("username");
     setUsername(name);
 
-    const savedMessages =
-      JSON.parse(localStorage.getItem(`chatMessages_${id}`)) || [];
-    dispatch(setMessages(savedMessages));
-  }, [dispatch, id]);
+    if (socket) {
+      socket.on("loadMessages", (loadedMessages) => {
+        dispatch(setMessages(loadedMessages));
+      });
+
+      socket.emit("startLivestream", id);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("loadMessages");
+      }
+    };
+  }, [dispatch, id, socket]);
 
   useEffect(() => {
-    // When component mounts, start the livestream if it's the instructor's own livestream
     if (id === instructor?.id) {
-      sendMessage("startLivestream", id); // Send message to start livestream on server
+      sendMessage({ type: "startLivestream", userId: id });
     }
-  }, [id, instructor, sendMessage]);
+
+    if (socket) {
+      socket.on("receiveMessage", (message) => {
+        dispatch(addMessage(message));
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("receiveMessage");
+      }
+    };
+  }, [id, instructor, sendMessage, socket, dispatch]);
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
@@ -51,16 +72,10 @@ const LivestreamDetail = ({ sidebar }) => {
         username,
         content: inputMessage,
         instructorId: id,
+        timestamp: new Date().toLocaleTimeString(),
       };
-      sendMessage("sendMessage", message); // Send message to server
-      dispatch(addMessage(message));
+      sendMessage(message);
       setInputMessage("");
-
-      const updatedMessages = [...messages, message];
-      localStorage.setItem(
-        `chatMessages_${id}`,
-        JSON.stringify(updatedMessages)
-      );
     }
   };
 
@@ -147,10 +162,13 @@ const LivestreamDetail = ({ sidebar }) => {
         </div>
         <div className="bg-white px-5 py-5 w-[1000px] ml-10">
           <p className="font-semibold">Live Chat</p>
-          <div className="h-96 overflow-y-scroll">
+          <div className="h-96 overflow-y-scroll relative">
             {messages.map((message, index) => (
               <div key={index} className="mb-4">
                 <strong>{message.username}:</strong> {message.content}
+                <span className="text-gray-400 text-[15px] absolute right-10">
+                  {message.timestamp}
+                </span>
               </div>
             ))}
           </div>
